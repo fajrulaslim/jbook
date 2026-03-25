@@ -28,16 +28,11 @@ const App = () => {
       return
     }
 
-    // const result = await ref.current.transform(input, {
-    //   loader: 'jsx',
-    //   target: 'es2015'
-    // })
-    // setCode(result.code)
     const result = await ref.current.build({
       entryPoints: ['index.js'],
       bundle: true,
       write: false,
-      plugins: [unpkgPathPlugin()],
+      plugins: [unpkgPathPlugin(input)],
       define: {
         'process.env.NODE_ENV': '"production"',
         global: 'window'
@@ -47,7 +42,7 @@ const App = () => {
   }
 
   return <div>
-    <textarea value={input} onChange={e => setInput(e.target.value)}></textarea>
+    <textarea value={input} onChange={e => setInput(e.target.value)} style={{ width: '100%'}} rows={6}></textarea>
     <div>
       <button onClick={onClick}>Submit</button>
     </div>

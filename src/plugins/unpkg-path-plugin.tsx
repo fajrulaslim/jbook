@@ -5,34 +5,26 @@ import localForage from "localforage"
 const fileCache = localForage.createInstance({
   name: 'filecache'
 });
-
-// (async () => {
-//   await fileCache.setItem('color', 'red')
-
-//   const color = await fileCache.getItem('color')
-//   console.log(color)
-// })()
  
-export const unpkgPathPlugin = () => {
+export const unpkgPathPlugin = (inputCode: string) => {
   return {
     name: 'unpkg-path-plugin',
     setup(build: esbuild.PluginBuild) {
-      build.onResolve({ filter: /.*/ }, async (args: any) => {
-        console.log('onResole', args);
-        // return { path: args.path, namespace: 'a' };
-        if(args.path === 'index.js') {
-          return { path: args.path, namespace: 'a' };
-        } 
-        // else if(args.path === 'tiny-test-pkg') {
-        //   return { path: 'https://unpkg.com/tiny-test-pkg@1.0.0/index.js', namespace: 'a' };
-        // }
+      // Handle root entry
+      build.onResolve({ filter: /(^index\.js$)/ }, async() => {
+        return { path: 'index.js', namespace: 'a' };
+      })
 
-        if(args.path.includes('./') || args.path.includes('../')) {
-          return {
+      // Handle relative path module
+      build.onResolve({ filter: /^\.+\// }, async(args: any) => {
+        return {
             namespace: 'a',
             path: new URL(args.path, 'https://unpkg.com' + args.resolveDir + '/').href
           }
-        }
+      })
+
+      // Handle main file module
+      build.onResolve({ filter: /.*/ }, async (args: any) => {
         return {
           namespace: 'a',
           path: `https://unpkg.com/${args.path}`
@@ -45,10 +37,7 @@ export const unpkgPathPlugin = () => {
         if (args.path === 'index.js') {
           return {
             loader: 'jsx',
-            contents: `
-              import react from 'react';
-              console.log(react);
-            `,
+            contents: inputCode,
           };
         }
 
@@ -65,21 +54,6 @@ export const unpkgPathPlugin = () => {
         }
         await fileCache.setItem(args.path, result)
         return result
-
-        // if (args.path === 'index.js') {
-        //   return {
-        //     loader: 'jsx',
-        //     contents: `
-        //       import message from './message';
-        //       console.log(message);
-        //     `,
-        //   };
-        // } else {
-        //   return {
-        //     loader: 'jsx',
-        //     contents: 'export default "hi there!"',
-        //   };
-        // }
       });
     },
   };
